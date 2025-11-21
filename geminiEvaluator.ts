@@ -13,7 +13,7 @@ import {
   Type,
 } from '@google/genai';
 
-export async function main(question: string, userAnswer: string, actualAnswer: string) {
+export default async function evaluate(question: string, userAnswer: string, actualAnswer: string) {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
@@ -94,8 +94,6 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
   		config,
   		contents,
 	});
-
-      console.log(response.candidates[0].content.parts[0]);
 
 	return {
       // @ts-ignore
