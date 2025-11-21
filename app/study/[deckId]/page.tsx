@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
+import { startMicStreaming } from '@/lib/speechStreaming';
 
 interface Flashcard {
   id: string;
@@ -45,11 +46,15 @@ const studyDecks: Record<string, StudyDeck> = {
   },
 };
 
-// Type definition for Speech Recognition
+// Type definition for transcribeAPI
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    transcribeAPI: {
+      onText: (callback: (text: string) => void) => void;
+      sendChunk: (chunk: ArrayBuffer) => void;
+      start: () => void;
+      stop: () => void;
+    };
   }
 }
 
@@ -66,7 +71,7 @@ export default function StudySessionPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const stopStreamingRef = useRef<(() => void) | null>(null);
 
   const currentCard = deck.cards[currentIndex];
 
@@ -74,52 +79,11 @@ export default function StudySessionPage() {
     return `${currentIndex + 1} / ${deck.cards.length}`;
   }, [currentIndex, deck.cards.length]);
 
-  // Initialize speech recognition
+  // Cleanup function
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript + ' ';
-            } else {
-              interimTranscript += transcript;
-            }
-          }
-
-          setUserAnswer((prev) => {
-            const base = prev.trim();
-            return base ? `${base} ${finalTranscript}`.trim() : finalTranscript.trim() || interimTranscript;
-          });
-        };
-
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
-        recognitionRef.current = recognition;
-      }
-    }
-
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+      if (stopStreamingRef.current) {
+        stopStreamingRef.current();
       }
       if (synthRef.current) {
         synthRef.current.cancel();
@@ -150,18 +114,24 @@ export default function StudySessionPage() {
     }
   };
 
-  const handleSpeechToText = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
-      return;
-    }
-
+  const handleSpeechToText = async () => {
     if (isListening) {
-      recognitionRef.current.stop();
+      if (stopStreamingRef.current) {
+        stopStreamingRef.current();
+        stopStreamingRef.current = null;
+      }
       setIsListening(false);
     } else {
-      recognitionRef.current.start();
-      setIsListening(true);
+      try {
+        const stopStreaming = await startMicStreaming((text) => {
+          setUserAnswer(prev => prev.trim() ? `${prev} ${text}`.trim() : text);
+        });
+        stopStreamingRef.current = stopStreaming;
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting microphone:', error);
+        alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
+      }
     }
   };
 
@@ -170,8 +140,9 @@ export default function StudySessionPage() {
       synthRef.current.cancel();
       setIsSpeaking(false);
     }
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+    if (stopStreamingRef.current) {
+      stopStreamingRef.current();
+      stopStreamingRef.current = null;
       setIsListening(false);
     }
     const nextIndex = (currentIndex + 1) % deck.cards.length;
@@ -218,7 +189,7 @@ export default function StudySessionPage() {
               </label>
               <button
                 onClick={handleSpeechToText}
-                disabled={!recognitionRef.current}
+                disabled={false}
                 className={`px-3 py-1 text-xs rounded-full transition-colors ${
                   isListening
                     ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
