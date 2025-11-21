@@ -200,23 +200,6 @@ export default function StudySessionPage() {
                   className="w-full min-h-[120px] px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
-
-              <div className="mt-6 space-y-2">
-                <p className="text-xs uppercase tracking-wide text-gray-500">
-                  Correct Answer
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  <p className="text-xl text-gray-100">{currentCard.answer}</p>
-                  <button
-                    onClick={() => handleTextToSpeech(currentCard.answer)}
-                    disabled={isSpeaking}
-                    className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-full text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title="Text to Speech"
-                  >
-                    {isSpeaking ? '🔊 Speaking...' : '🔊'}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 

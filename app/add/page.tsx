@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 
 interface FormState {
   deckId: string;
@@ -188,33 +189,24 @@ export default function AddCardPage() {
         </div>
 
         <div className="space-y-2">
-          <label
-            className="text-sm font-medium text-gray-300"
-            htmlFor="question"
-          >
-            Question / Prompt
-          </label>
-          <textarea
+          <MarkdownEditor
             id="question"
             name="question"
             value={formState.question}
             onChange={handleChange}
-            placeholder="e.g. Conjugate “to be” in present tense"
-            className="min-h-[120px] w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+            placeholder='e.g. Conjugate "to be" in present tense'
+            label="Question / Prompt"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300" htmlFor="answer">
-            Answer
-          </label>
-          <textarea
+          <MarkdownEditor
             id="answer"
             name="answer"
             value={formState.answer}
             onChange={handleChange}
             placeholder="e.g. I am, you are, she/he/it is..."
-            className="min-h-[120px] w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+            label="Answer"
           />
         </div>
 
