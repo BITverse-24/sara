@@ -1,7 +1,8 @@
-import { questionType, messageType } from "./database/decks"
+import { questionType, messageType, updateQuestionsInDeck } from "./database/decks"
 import { evaluateAnswer } from "./gemini/geminiEvaluator";
 import { addMessageToChatInFlashcard } from "./flashcards";
-import { applySm17Repetition, ItemState } from "./SM17Algo";
+import { applySm17Repetition, ItemState, Grade } from "./SM17Algo";
+import { decks } from "./loadDecks";
 
 export const wordGradeToNumber = (wordGrade: string) => {
     const map: Record<string, number> = {
@@ -15,17 +16,49 @@ export const wordGradeToNumber = (wordGrade: string) => {
     return map[wordGrade]
 }
 
-export const submitAnswer = async (deckId: string, question: questionType, userAnswer: string) => {
-    const aiReply = await evaluateAnswer(question.answer, userAnswer);
+export const numberGradeToWord = (numberGrade: number) => {
+    const map: Record<number, string> = {
+        '2': 'again',
+        '3': 'hard',
+        '4': 'good',
+        '5': 'easy'
+    }
+
+    return map[numberGrade];
+}
+
+export const submitAnswer = async (deckId: string, flashcard: questionType, userAnswer: string) => {
+    const aiReply = await evaluateAnswer(flashcard.answer, userAnswer);
     const aiMessage: messageType = {
         timestamp: aiReply.timestamp,
         text: aiReply.text,
-        author: 'user'
+        author: 'ai'
     }
-    addMessageToChatInFlashcard(deckId, aiMessage, question.id);
+    addMessageToChatInFlashcard(deckId, aiMessage, flashcard.id);
     const currItemState: ItemState = {
-        lastIntervalDays: question.lastInterval / 86400,
-        stability: question.stability,
-        lapses: question.lapses,
+        lastIntervalDays: flashcard.lastInterval / (24 * 60 * 60 * 1000),
+        stability: flashcard.stability,
+        difficulty: wordGradeToNumber(flashcard.level),
+        lapses: flashcard.lapses,
     }
+
+    const aiGrade = wordGradeToNumber(aiReply.tag)
+    const newItemState: ItemState = applySm17Repetition(currItemState, aiGrade as Grade)
+    let questionsUpdate;
+
+    for (let deck of decks) {
+        if (deck['id'] == deckId) {
+            for (let question of deck['id']['questions']) {
+                if (question['id'] == flashcard.id) {
+                    question.lastInterval = newItemState.lastIntervalDays * 86400;
+                    question.stability = newItemState.stability;
+                    question.level = numberGradeToWord(newItemState.difficulty);
+                    question.lapses = newItemState.lapses;
+                    questionsUpdate = deck['id']['questions'];
+                }
+            }
+        }
+    }
+
+    updateQuestionsInDeck(deckId, questionsUpdate)
 }
