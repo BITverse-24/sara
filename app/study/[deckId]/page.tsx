@@ -6,6 +6,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { startMicStreaming } from '@/lib/speechStreaming';
 import { AIChatbot } from '@/components/chat/AIChatbot';
+import { MarkdownDisplay } from '@/components/ui/MarkdownDisplay';
 
 interface Flashcard {
   id: string;
@@ -172,7 +173,9 @@ export default function StudySessionPage() {
                 {isSpeaking ? '🔊 Speaking...' : '🔊'}
               </button>
             </div>
-            <p className="mt-4 text-2xl font-semibold">{currentCard.question}</p>
+            <div className="mt-4 text-2xl font-semibold">
+              <MarkdownDisplay content={currentCard.question} />
+            </div>
 
             <div className="mt-8 space-y-4">
               <div className="text-left">

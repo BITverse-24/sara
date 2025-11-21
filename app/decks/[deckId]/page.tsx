@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { MarkdownDisplay } from '@/components/ui/MarkdownDisplay';
 
 interface Flashcard {
   id: string;
@@ -175,13 +176,17 @@ export default function DeckDetailPage() {
                         <p className="text-xs uppercase text-gray-500">
                           Question
                         </p>
-                        <p className="mt-2 text-lg font-medium">{card.question}</p>
+                        <div className="mt-2 text-lg font-medium">
+                          <MarkdownDisplay content={card.question} />
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs uppercase text-gray-500">
                           Answer
                         </p>
-                        <p className="mt-2 text-gray-200">{card.answer}</p>
+                        <div className="mt-2 text-gray-200">
+                          <MarkdownDisplay content={card.answer} />
+                        </div>
                       </div>
                     </>
                   )}
