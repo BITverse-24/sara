@@ -3,12 +3,8 @@ import * as path from 'path';
 import * as url from 'url';
 import { TranscribeSession } from "../ipc/transcribe";
 
-
 let mainWindow: BrowserWindow | null = null;
 let session: TranscribeSession | null = null;
-
-
-const isDev = process.env.NODE_ENV === 'development';
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -22,20 +18,7 @@ function createWindow(): void {
     },
   });
 
-  if (isDev) {
-    // In development, load from Next.js dev server
-    mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
-  } else {
-    // In production, load from built files
-    mainWindow.loadURL(
-      url.format({
-        pathname: path.join(__dirname, '../../renderer/out/index.html'),
-        protocol: 'file:',
-        slashes: true,
-      })
-    );
-  }
+  mainWindow.loadURL('http://localhost:3000');
 
   mainWindow.on('closed', () => {
     mainWindow = null;

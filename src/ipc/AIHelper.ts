@@ -3,6 +3,8 @@ import { evaluateAnswer } from "./gemini/geminiEvaluator";
 import { addMessageToChatInFlashcard } from "./flashcards";
 import { applySm17Repetition, ItemState, Grade } from "./SM17Algo";
 import { decks } from "./loadDecks";
+import { ipcMain } from 'electron';
+
 
 export const wordGradeToNumber = (wordGrade: string) => {
     const map: Record<string, number> = {
@@ -27,7 +29,7 @@ export const numberGradeToWord = (numberGrade: number) => {
     return map[numberGrade];
 }
 
-export const submitAnswer = async (deckId: string, flashcard: questionType, userAnswer: string) => {
+const submitAnswer = async (deckId: string, flashcard: questionType, userAnswer: string) => {
     const aiReply = await evaluateAnswer(flashcard.answer, userAnswer);
     const aiMessage: messageType = {
         timestamp: aiReply.timestamp,
@@ -61,4 +63,10 @@ export const submitAnswer = async (deckId: string, flashcard: questionType, user
     }
 
     updateQuestionsInDeck(deckId, questionsUpdate)
+}
+
+export default function registerSubmitAnswer() {
+    ipcMain.handle(`submitAnswer`, async (_, deckId: string, flashcard: questionType, userAnswer: string) => {
+        return submitAnswer(deckId, flashcard, userAnswer);
+    });
 }
