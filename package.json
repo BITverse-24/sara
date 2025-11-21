@@ -15,11 +15,16 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"renderer/**/*.{ts,tsx,css}\"",
     "package": "npm run build && electron-builder"
   },
-  "keywords": ["electron", "typescript", "nextjs", "react"],
+  "keywords": [
+    "electron",
+    "typescript",
+    "nextjs",
+    "react"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "electron": "^39.2.0",
+    "electron": "^39.2.3",
     "next": "^16.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
