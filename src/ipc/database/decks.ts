@@ -18,6 +18,8 @@ export interface questionType {
     image: string | null;
     answer: string;
     level: string;
+    stability: number;
+    lapses: number;
     lastInterval: number;
     attempts: [questionAttemptType];
     chat: [messageType];
