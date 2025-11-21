@@ -13,7 +13,7 @@ import {
   Type,
 } from '@google/genai';
 
-export async function main(userAnswer: string, actualAnswer: string) {
+export async function main(question: string, userAnswer: string, actualAnswer: string) {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
@@ -78,6 +78,8 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
       parts: [
         {
           text: `
+                Question: ${question}
+                --------------------------
 		  		User Answer: ${userAnswer}
 				--------------------------
 				Actual Answer: ${actualAnswer}
