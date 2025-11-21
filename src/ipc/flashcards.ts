@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron';
+import { generateId } from '../utils/general.ts';
 import { messageType, questionType, questionAttemptType, updateQuestionsInDeck } from './database/decks.ts';
 import { decks } from './loadDecks.ts';
 
-export const addMessageToChatInFlashcard = async (deckId: String, message: messageType, flashcardId: String) => {
+export const addMessageToChatInFlashcard = async (deckId: string, message: messageType, flashcardId: string) => {
     for (let deck of decks) {
         if (deck['id'] == deckId) {
             let questions: [questionType] = deck['questions'];
@@ -16,7 +17,7 @@ export const addMessageToChatInFlashcard = async (deckId: String, message: messa
     }
 };
 
-export const addNewAttemptToFlashcard = async (deckId: String, attemptData: questionAttemptType, flashcardId: String) => {
+export const addNewAttemptToFlashcard = async (deckId: string, attemptData: questionAttemptType, flashcardId: string) => {
     for (let deck of decks) {
         if (deck['id'] == deckId) {
             let questions: [questionType] = deck['questions'];
@@ -30,7 +31,25 @@ export const addNewAttemptToFlashcard = async (deckId: String, attemptData: ques
     }
 }
 
-export const getFlashcardReviewQueue = async (deckId: String) => {
+export const addNewFlashcard = async (deckId: string, question: string, answer: string, image: string) => {
+    const newFlashcard: questionType = {
+        id: generateId(),
+        text: question,
+        answer: answer,
+        image: image,
+        level: 'new',
+        stability: 1,
+        lapses: 0,
+        lastInterval: 1,
+        attempts: [],
+        chat: []
+    }
+
+    addQuestionToDeck(newFlashcard, deckId);
+
+}
+
+export const getFlashcardReviewQueue = async (deckId: string) => {
     let questions: Array<questionType> = [];
     let newQuestions: number = 0;
     let learning: number = 0;
@@ -54,19 +73,23 @@ export const getFlashcardReviewQueue = async (deckId: String) => {
         return a.due - b.due;
     });
 
-    return [ reviewQueue, newQuestions, learning ] as const;
+    return [reviewQueue, newQuestions, learning] as const;
 }
 
 
 export function registerIpcFunctions() {
     ipcMain.handle('flashcard:addMessageToChatInFlashcard ',
-        (event, deckId: String, message: messageType, flashcardId: String) =>
+        (event, deckId: string, message: messageType, flashcardId: string) =>
             addMessageToChatInFlashcard(deckId, message, flashcardId));
 
     ipcMain.handle('flashcard:addNewAttemptToFlashcard',
-        (event, deckId: String, attemptData: questionAttemptType, flashcardId: String) =>
+        (event, deckId: string, attemptData: questionAttemptType, flashcardId: string) =>
             addNewAttemptToFlashcard(deckId, attemptData, flashcardId));
 
     ipcMain.handle('flashcard:getFlashCardReview',
-        (event, deckId: String) => getFlashcardReviewQueue(deckId));
+        (event, deckId: string) => getFlashcardReviewQueue(deckId));
+
+    ipcMain.handle('flashcard:addNewFlashcard',
+        (event, deckId: string, question: string, answer: string, image: string | null) =>
+            addNewFlashcard(deckId, question, answer, image))
 }

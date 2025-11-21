@@ -21,8 +21,8 @@ export interface questionType {
     stability: number;
     lapses: number;
     lastInterval: number;
-    attempts: [questionAttemptType];
-    chat: [messageType];
+    attempts: [questionAttemptType] | [];
+    chat: [messageType] | [];
 }
 
 export interface deckType {
@@ -94,6 +94,14 @@ const questionSchema = new mongoose.Schema(
         },
         level: {
             type: String,
+            required: true,
+        },
+        stability: {
+            type: Number,
+            required: true
+        },
+        lapses: {
+            type: Number,
             required: true,
         },
         attempts: {
