@@ -46,17 +46,6 @@ const studyDecks: Record<string, StudyDeck> = {
   },
 };
 
-// Type definition for transcribeAPI
-declare global {
-  interface Window {
-    transcribeAPI: {
-      onText: (callback: (text: string) => void) => void;
-      sendChunk: (chunk: ArrayBuffer) => void;
-      start: () => void;
-      stop: () => void;
-    };
-  }
-}
 
 export default function StudySessionPage() {
   const params = useParams<{ deckId: string }>();
