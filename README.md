@@ -29,6 +29,7 @@ interface Question {
 
 ```ts
 interface Deck {
+	id: string;
 	questions: Question[];
 	createdAt: number;
 }
