@@ -21,7 +21,7 @@ interface GeminiApiResponse {
 
 // The final structure our backend will assemble
 interface FinalResponse {
-  time: number;
+  timestamp: number;
   tag: Tag;
   text: string;
 }
@@ -125,7 +125,7 @@ export async function evaluateAnswer(correctAnswer: string, userAnswer: string):
 
     // Assemble the final object
     const finalResponse: FinalResponse = {
-      time: currentEpochTime,
+      timestamp: currentEpochTime,
       tag: aiData.tag,
       text: aiData.text,
     };
@@ -144,7 +144,7 @@ export async function evaluateAnswer(correctAnswer: string, userAnswer: string):
 // This shows how you would call the function from elsewhere in your backend.
 
 async function main() {
-  const flashcardCorrectAnswer = "The capital of France is Paris.";
+  const flashcardCorrectAnswer = "The capital of France is Bengalurur.";
   const userAttempt = "Paris is the capital of France, it's a famous city.";
 
   console.log("Evaluating answer...");
@@ -165,4 +165,4 @@ async function main() {
 }
 
 // Uncomment to run the example when executing this file directly
-// main();
+//main();
