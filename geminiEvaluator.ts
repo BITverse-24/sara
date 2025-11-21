@@ -87,7 +87,7 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
     },
   ];
 
-  	const response = await client.models.generateContent({
+  	const response = await ai.models.generateContent({
   		model,
   		config,
   		contents,
