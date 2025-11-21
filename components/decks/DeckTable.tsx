@@ -21,11 +21,10 @@ export function DeckTable({ decks, onDeckSelect }: DeckTableProps) {
 
   return (
     <div className="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="grid grid-cols-11 gap-4 p-4 bg-gray-800 border-b border-gray-700 font-medium">
+      <div className="grid grid-cols-9 gap-4 p-4 bg-gray-800 border-b border-gray-700 font-medium">
         <div className="col-span-5">Deck</div>
         <div className="col-span-2 text-center">New</div>
         <div className="col-span-2 text-center">Learn</div>
-        <div className="col-span-2 text-center">Due</div>
       </div>
       
       <div className="divide-y divide-gray-700">
@@ -33,14 +32,13 @@ export function DeckTable({ decks, onDeckSelect }: DeckTableProps) {
           <div 
             key={deck.id}
             onClick={() => handleDeckClick(deck.id)}
-            className={`grid grid-cols-11 gap-4 p-4 items-center hover:bg-gray-750 cursor-pointer transition-colors ${
+            className={`grid grid-cols-9 gap-4 p-4 items-center hover:bg-gray-750 cursor-pointer transition-colors ${
               selectedDeckId === deck.id ? 'bg-gray-750' : ''
             }`}
           >
             <div className="col-span-5 font-medium">{deck.name}</div>
             <div className="col-span-2 text-center text-blue-400">{deck.newCount}</div>
             <div className="col-span-2 text-center text-yellow-400">{deck.learnCount}</div>
-            <div className="col-span-2 text-center text-green-400">{deck.dueCount}</div>
           </div>
         ))}
       </div>

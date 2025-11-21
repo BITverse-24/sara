@@ -7,21 +7,21 @@ const sampleDecks: Deck[] = [
     name: "Spanish Basics",
     newCount: 25,
     learnCount: 40,
-    dueCount: 12,
+   
   },
   {
     id: "2",
     name: "Biology — Cells",
     newCount: 10,
     learnCount: 18,
-    dueCount: 6,
+   
   },
   {
     id: "3",
     name: "Interview Prep",
     newCount: 8,
     learnCount: 11,
-    dueCount: 4,
+    
   },
 ];
 
