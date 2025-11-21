@@ -10,15 +10,18 @@ interface FormState {
   imageUrl: string;
 }
 
-const availableDecks = [
+const initialDecks = [
   { id: '1', name: 'Spanish Basics' },
   { id: '2', name: 'Biology — Cells' },
   { id: '3', name: 'Interview Prep' },
 ];
 
 export default function AddCardPage() {
+  const [availableDecks, setAvailableDecks] = useState(initialDecks);
+  const [mode, setMode] = useState<'card' | 'deck'>('card');
+  const [newDeckName, setNewDeckName] = useState('');
   const [formState, setFormState] = useState<FormState>({
-    deckId: availableDecks[0]?.id ?? '',
+    deckId: initialDecks[0]?.id ?? '',
     question: '',
     answer: '',
     imageUrl: '',
@@ -26,8 +29,11 @@ export default function AddCardPage() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const isValid = useMemo(() => {
+    if (mode === 'deck') {
+      return newDeckName.trim() !== '';
+    }
     return formState.question.trim() !== '' && formState.answer.trim() !== '';
-  }, [formState.answer, formState.question]);
+  }, [formState.answer, formState.question, mode, newDeckName]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -40,7 +46,29 @@ export default function AddCardPage() {
     setStatus('idle');
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleDeckSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isValid || status === 'saving') return;
+
+    setStatus('saving');
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    
+    // Create new deck
+    const newDeckId = String(Date.now());
+    const newDeck = { id: newDeckId, name: newDeckName.trim() };
+    setAvailableDecks((prev) => [...prev, newDeck]);
+    setFormState((prev) => ({ ...prev, deckId: newDeckId }));
+    setNewDeckName('');
+    setStatus('saved');
+    
+    // Switch back to card mode after creating deck
+    setTimeout(() => {
+      setMode('card');
+      setStatus('idle');
+    }, 1500);
+  };
+
+  const handleCardSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isValid || status === 'saving') return;
 
@@ -58,17 +86,88 @@ export default function AddCardPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-sm uppercase tracking-wide text-gray-400">
-          Add flashcard
-        </p>
-        <h1 className="text-3xl font-semibold">Create a new card</h1>
-        <p className="mt-2 text-gray-400">
-          Provide the prompt, the answer, and (optionally) an image URL to help
-          with recall.
-        </p>
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setMode('card')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              mode === 'card'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            Add Card
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('deck')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              mode === 'deck'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            New Deck
+          </button>
+        </div>
+        {mode === 'card' ? (
+          <>
+            <p className="text-sm uppercase tracking-wide text-gray-400">
+              Add flashcard
+            </p>
+            <h1 className="text-3xl font-semibold">Create a new card</h1>
+            <p className="mt-2 text-gray-400">
+              Provide the prompt, the answer, and (optionally) an image URL to help
+              with recall.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm uppercase tracking-wide text-gray-400">
+              Create deck
+            </p>
+            <h1 className="text-3xl font-semibold">Create a new deck</h1>
+            <p className="mt-2 text-gray-400">
+              Create a new deck to organize your flashcards.
+            </p>
+          </>
+        )}
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {mode === 'deck' ? (
+        <form onSubmit={handleDeckSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300" htmlFor="deckName">
+              Deck Name
+            </label>
+            <input
+              id="deckName"
+              type="text"
+              value={newDeckName}
+              onChange={(e) => {
+                setNewDeckName(e.target.value);
+                setStatus('idle');
+              }}
+              placeholder="e.g. French Vocabulary"
+              className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              type="submit"
+              disabled={!isValid || status === 'saving'}
+              className="disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {status === 'saving' ? 'Creating…' : 'Create deck'}
+            </Button>
+            {status === 'saved' && (
+              <p className="text-sm text-green-400">Deck created successfully!</p>
+            )}
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleCardSubmit} className="space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-300" htmlFor="deckId">
             Deck
@@ -160,19 +259,20 @@ export default function AddCardPage() {
           ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            disabled={!isValid || status === 'saving'}
-            className="disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {status === 'saving' ? 'Saving…' : 'Save card'}
-          </Button>
-          {status === 'saved' && (
-            <p className="text-sm text-green-400">Card saved locally.</p>
-          )}
-        </div>
-      </form>
+          <div className="flex items-center gap-3">
+            <Button
+              type="submit"
+              disabled={!isValid || status === 'saving'}
+              className="disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {status === 'saving' ? 'Saving…' : 'Save card'}
+            </Button>
+            {status === 'saved' && (
+              <p className="text-sm text-green-400">Card saved locally.</p>
+            )}
+          </div>
+        </form>
+      )}
     </div>
   );
 }
