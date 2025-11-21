@@ -5,6 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { startMicStreaming } from '@/lib/speechStreaming';
+import { AIChatbot } from '@/components/chat/AIChatbot';
 
 interface Flashcard {
   id: string;
@@ -154,57 +155,16 @@ export default function StudySessionPage() {
         </div>
       </header>
 
-      <div className="rounded-3xl border border-gray-800 bg-gray-900 p-10 text-center">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <p className="text-xs uppercase tracking-wide text-gray-500">
-            Question
-          </p>
-          <button
-            onClick={() => handleTextToSpeech(currentCard.question)}
-            disabled={isSpeaking}
-            className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-full text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Text to Speech"
-          >
-            {isSpeaking ? '🔊 Speaking...' : '🔊'}
-          </button>
-        </div>
-        <p className="mt-4 text-2xl font-semibold">{currentCard.question}</p>
-
-        <div className="mt-8 space-y-4">
-          <div className="text-left">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs uppercase tracking-wide text-gray-500">
-                Your Answer
-              </label>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Flashcard Section - Takes 2 columns */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-3xl border border-gray-800 bg-gray-900 p-10 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                Question
+              </p>
               <button
-                onClick={handleSpeechToText}
-                disabled={false}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  isListening
-                    ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title={isListening ? 'Stop Recording' : 'Start Voice Input'}
-              >
-                {isListening ? '🎤 Listening...' : '🎤 Voice Input'}
-              </button>
-            </div>
-            <textarea
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              placeholder={isListening ? "Listening... Speak your answer" : "Type your answer here or use voice input..."}
-              className="w-full min-h-[120px] px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div className="mt-6 space-y-2">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Correct Answer
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <p className="text-xl text-gray-100">{currentCard.answer}</p>
-              <button
-                onClick={() => handleTextToSpeech(currentCard.answer)}
+                onClick={() => handleTextToSpeech(currentCard.question)}
                 disabled={isSpeaking}
                 className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-full text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Text to Speech"
@@ -212,14 +172,69 @@ export default function StudySessionPage() {
                 {isSpeaking ? '🔊 Speaking...' : '🔊'}
               </button>
             </div>
+            <p className="mt-4 text-2xl font-semibold">{currentCard.question}</p>
+
+            <div className="mt-8 space-y-4">
+              <div className="text-left">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs uppercase tracking-wide text-gray-500">
+                    Your Answer
+                  </label>
+                  <button
+                    onClick={handleSpeechToText}
+                    disabled={false}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      isListening
+                        ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
+                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    title={isListening ? 'Stop Recording' : 'Start Voice Input'}
+                  >
+                    {isListening ? '🎤 Listening...' : '🎤 Voice Input'}
+                  </button>
+                </div>
+                <textarea
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  placeholder={isListening ? "Listening... Speak your answer" : "Type your answer here or use voice input..."}
+                  className="w-full min-h-[120px] px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="mt-6 space-y-2">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Correct Answer
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <p className="text-xl text-gray-100">{currentCard.answer}</p>
+                  <button
+                    onClick={() => handleTextToSpeech(currentCard.answer)}
+                    disabled={isSpeaking}
+                    className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-full text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Text to Speech"
+                  >
+                    {isSpeaking ? '🔊 Speaking...' : '🔊'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <Button onClick={handleNext} className="px-8">
+              Next Card
+            </Button>
           </div>
         </div>
-      </div>
 
-      <div className="flex items-center justify-center">
-        <Button onClick={handleNext} className="px-8">
-          Next Card
-        </Button>
+        {/* AI Chatbot Section - Takes 1 column */}
+        <div className="lg:col-span-1 w-full">
+          <AIChatbot
+            currentQuestion={currentCard.question}
+            currentAnswer={currentCard.answer}
+            userAnswer={userAnswer}
+          />
+        </div>
       </div>
     </div>
   );

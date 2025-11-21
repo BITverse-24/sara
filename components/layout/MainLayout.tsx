@@ -46,7 +46,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto">
+        <div className={pathname?.startsWith('/study') ? 'max-w-7xl mx-auto' : 'max-w-4xl mx-auto'}>
           {children}
         </div>
       </main>

@@ -3,7 +3,6 @@ export interface Deck {
   name: string;
   newCount: number;
   learnCount: number;
-  dueCount: number;
 }
 
 export interface Card {
