@@ -1,8 +1,12 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
+import { TranscribeSession } from "../ipc/transcribe";
+
 
 let mainWindow: BrowserWindow | null = null;
+let session: TranscribeSession | null = null;
+
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -46,6 +50,32 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+});
+
+ipcMain.on("transcribe:start", async (event) => {
+  if (!mainWindow) return;
+  if (session) {
+    // Already running
+    return;
+  }
+  session = new TranscribeSession(mainWindow);
+  session.start().catch(err => {
+    console.error("Transcribe error", err);
+    session = null;
+  });
+});
+
+ipcMain.on("transcribe:stop", () => {
+  if (session) {
+    session.close();
+    session = null;
+  }
+});
+
+// Receive audio chunks from renderer
+ipcMain.on("transcribe:chunk", (event, chunk: ArrayBuffer) => {
+  if (!session) return;
+  session.pushChunk(Buffer.from(chunk));
 });
 
 app.on('window-all-closed', () => {
