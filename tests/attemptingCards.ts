@@ -21,8 +21,8 @@ async function main() {
             }
         }
 
-        console.log(questionAns)
-        await submitAnswer("test1deck", questionAns as questionType, "this is answer 2");
+        await submitAnswer("test1deck", questionAns as questionType, "this is answer 3");
+        console.log("Done!")
     }
     catch (err) {
         console.log("!!!! ERRROR !!!!\n\n", err);

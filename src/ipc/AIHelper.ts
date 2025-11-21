@@ -1,5 +1,5 @@
 import { questionType, messageType, questionAttemptType, updateQuestionsInDeck } from "./database/decks"
-import { evaluateAnswer } from "./gemini/geminiEvaluator";
+import { evaluate } from "./gemini/geminiEvaluator";
 import { addMessageToChatInFlashcard, addNewAttemptToFlashcard } from "./flashcards";
 import { applySm17Repetition, ItemState, Grade } from "./SM17Algo";
 import { decks } from "./loadDecks";
@@ -28,7 +28,7 @@ export const numberGradeToWord = (numberGrade: number) => {
 }
 
 export const submitAnswer = async (deckId: string, flashcard: questionType, userAnswer: string) => {
-    const aiReply = await evaluateAnswer(flashcard.answer, userAnswer);
+    const aiReply = await evaluate(flashcard.text, flashcard.answer, userAnswer);
     const aiMessage: messageType = {
         timestamp: aiReply.timestamp,
         text: aiReply.text,
