@@ -9,6 +9,7 @@ Purpose: To give AI knowledge of previous attempts
 interface QuestionAttempt {
 	userAnswer: string;
 	reply: string; // What the AI repies with
+	level: 'easy' | 'new' | 'good' | 'hard' | 'again';
 }
 ```
 
@@ -32,5 +33,6 @@ interface Deck {
 	id: string;
 	questions: Question[];
 	createdAt: number;
+	name: string;
 }
 ```
