@@ -1,6 +1,6 @@
-import { questionType, messageType, updateQuestionsInDeck } from "./database/decks"
+import { questionType, messageType, questionAttemptType, updateQuestionsInDeck } from "./database/decks"
 import { evaluateAnswer } from "./gemini/geminiEvaluator";
-import { addMessageToChatInFlashcard } from "./flashcards";
+import { addMessageToChatInFlashcard, addNewAttemptToFlashcard } from "./flashcards";
 import { applySm17Repetition, ItemState, Grade } from "./SM17Algo";
 import { decks } from "./loadDecks";
 
@@ -48,7 +48,7 @@ export const submitAnswer = async (deckId: string, flashcard: questionType, user
 
     for (let deck of decks) {
         if (deck['id'] == deckId) {
-            for (let question of deck['id']['questions']) {
+            for (let question of deck.questions) {
                 if (question['id'] == flashcard.id) {
                     question.lastInterval = newItemState.lastIntervalDays * 86400;
                     question.stability = newItemState.stability;
@@ -60,5 +60,12 @@ export const submitAnswer = async (deckId: string, flashcard: questionType, user
         }
     }
 
+    const attempt: questionAttemptType = {
+        userAnswer: userAnswer,
+        reply: aiReply.text,
+        level: aiReply.tag,
+        timestamp: Date.now()
+    }
+    addNewAttemptToFlashcard(deckId, attempt, flashcard.id);
     updateQuestionsInDeck(deckId, questionsUpdate)
 }

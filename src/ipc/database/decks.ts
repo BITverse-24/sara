@@ -4,6 +4,7 @@ export interface questionAttemptType {
     userAnswer: string;
     reply: string;
     timestamp: number;
+    level: string;
 }
 
 export interface messageType {
@@ -21,8 +22,8 @@ export interface questionType {
     stability: number;
     lapses: number;
     lastInterval: number;
-    attempts: [questionAttemptType] | [];
-    chat: [messageType] | [];
+    attempts: Array<questionAttemptType>;
+    chat: Array<messageType>;
 }
 
 export interface deckType {
@@ -67,9 +68,13 @@ const questionAttemptSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        grade: {
+        level: {
             type: String,
             required: true,
+        },
+        timestamp: {
+            type: Number,
+            required: true
         }
     }
 )
@@ -79,6 +84,7 @@ const questionSchema = new mongoose.Schema(
         id: {
             type: String,
             required: true,
+            unique: true
         },
         text: {
             type: String,
@@ -128,6 +134,7 @@ const deckSchema = new mongoose.Schema(
         id: {
             type: String,
             required: true,
+            unique: true
         },
         name: {
             type: String,
@@ -150,11 +157,10 @@ const deckModel = mongoose.model('deck', deckSchema);
 
 
 
-export const createDeck = async (id: String, name: String, createdDate: number) => {
+export const createDeck = async (id: String, name: String) => {
     return await deckModel.create(
         {
             questions: [],
-            createdAt: createdDate,
             id: id,
             name: name
         }
