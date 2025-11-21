@@ -13,7 +13,7 @@ import {
   Type,
 } from '@google/genai';
 
-export async function main() {
+export async function main(userAnswer: string, actualAnswer: string) {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
@@ -77,19 +77,24 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
       role: 'user',
       parts: [
         {
-          text: `INSERT_INPUT_HERE`,
+          text: `
+		  		User Answer: ${userAnswer}
+				--------------------------
+				Actual Answer: ${actualAnswer}
+		  `,
         },
       ],
     },
   ];
 
-  const response = await ai.models.generateContentStream({
-    model,
-    config,
-    contents,
-  });
-  let fileIndex = 0;
-  for await (const chunk of response) {
-    console.log(chunk.text);
-  }
+  	const response = await client.models.generateContent({
+  		model,
+  		config,
+  		contents,
+	});
+
+	return {
+		text: response.output[0].text,
+		level: response.output[0].level
+	}
 }
