@@ -1,0 +1,36 @@
+{
+  "name": "electron-ts",
+  "version": "1.0.0",
+  "description": "Electron boilerplate with modular IPC mechanism",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev:renderer": "cd renderer && next dev",
+    "dev:electron": "NODE_ENV=development electron .",
+    "dev": "npm run build:main && npm run build:preload && npm run dev:renderer & npm run dev:electron",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:renderer": "cd renderer && next build",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "format": "prettier --write \"src/**/*.ts\" \"renderer/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"renderer/**/*.{ts,tsx,css}\"",
+    "package": "npm run build && electron-builder"
+  },
+  "keywords": ["electron", "typescript", "nextjs", "react"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^39.2.0",
+    "next": "^16.0.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "electron-builder": "^26.0.12",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
