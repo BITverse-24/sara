@@ -8,18 +8,13 @@ import {
   HarmBlockThreshold,
 } from '@google/generative-ai';
 
-// --- 1. DEFINE THE DATA STRUCTURES (TYPES) ---
-// This ensures type safety throughout our code.
-
 type Tag = "easy" | "good" | "hard" | "again";
 
-// The structure we expect Gemini to return
 interface GeminiApiResponse {
   tag: Tag;
   text: string;
 }
 
-// The final structure our backend will assemble
 interface FinalResponse {
   timestamp: number;
   tag: Tag;
@@ -36,31 +31,31 @@ if (!API_KEY) {
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const model = genAI.getGenerativeModel({
-  // Use the exact model name as specified in the docs for Gemini 2.5 Flash
-  model: "gemini-2.5-flash", 
+  model: "gemini-2.5-flash",
 });
 
-// It's a good practice to set safety settings
+// --- UPDATED GENERATION CONFIG ---
 const generationConfig = {
-  temperature: 0.5, // A bit of creativity in the 'text' response
+  temperature: 0.5, 
   topP: 1,
   topK: 1,
-  maxOutputTokens: 2048,
+  // As requested, increased the output token limit
+  maxOutputTokens: 8126, 
 };
 
+// Safety settings remain the same
 const safetySettings = [
-  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
 ];
 
-
-// --- 3. HELPER FUNCTION TO CONSTRUCT THE PROMPT ---
-// This keeps the main function clean and makes the prompt easy to edit.
+// --- 3. IMPROVED PROMPT WITH DETAILED INSTRUCTIONS AND EXAMPLES ---
 
 function getPrompt(correctAnswer: string, userAnswer: string): string {
-  return `You are an expert AI evaluator for a flashcard application. Your task is to analyze a user's answer by comparing it to the correct answer based on CONCEPTUAL similarity.
+  // The instructions are now more detailed, demanding better reasoning.
+  return `You are an expert AI evaluator and learning coach for a flashcard application. Your task is to analyze a user's answer by comparing it to the correct answer based on CONCEPTUAL similarity.
 
 First, internally determine a conceptual accuracy score from 0 to 100.
 Second, use that score to select one of the following tags:
@@ -69,41 +64,55 @@ Second, use that score to select one of the following tags:
 - 'hard': for scores 40-60
 - 'again': for scores 0-39
 
-Third, write a short, encouraging message in natural language to the user that explains why they received that tag.
+Third, write a DETAILED and CONSTRUCTIVE message in natural language. This message must clearly explain the reasoning behind the tag. 
+- If the answer is 'easy', reinforce the key concepts and praise their understanding.
+- If the answer is 'good' or 'hard', acknowledge what they got right, then gently point out what was missing or could be improved.
+- If the answer is 'again', be encouraging and explain the core concept they missed to help them learn for the next time.
 
 You MUST provide your response in a strict JSON format with two keys: "tag" and "text". Do not include markdown like \`\`\`json.
 
+---
+**IMPROVED EXAMPLES:**
+
 **Example 1:**
-Correct Answer: "The mitochondria is the powerhouse of the cell, responsible for generating energy in the form of ATP."
+Correct Answer: "The mitochondria is the powerhouse of the cell, responsible for generating energy in the form of ATP through cellular respiration."
 User's Answer: "it makes energy for the cell to use"
 Expected JSON Response:
 {
   "tag": "easy",
-  "text": "Great job! You perfectly understood the main function of the mitochondria as the cell's energy producer."
+  "text": "Excellent work! You've perfectly captured the core concept that the mitochondria is the cell's energy producer. Your answer was concise and accurate, which is a great sign of strong recall. This function of generating ATP is precisely why it's famously called the 'powerhouse of the cell'."
 }
 
 **Example 2:**
-Correct Answer: "The three primary colors in additive mixing are red, green, and blue."
-User's Answer: "red and blue"
+Correct Answer: "The primary causes of World War I can be summarized by the acronym MAIN: Militarism, Alliances, Imperialism, and Nationalism."
+User's Answer: "It was because a guy got assassinated and all the countries were in pacts with each other."
 Expected JSON Response:
 {
-  "tag": "hard",
-  "text": "You're on the right track! You correctly named two of the three colors, but you missed one. Almost there!"
+  "tag": "good",
+  "text": "This is a strong start! You've correctly identified two very important elements: the assassination of Archduke Franz Ferdinand (the trigger) and the complex system of alliances that pulled everyone into the conflict. That's a solid foundation. To elevate your answer to 'easy', try to also include the long-term pressures that were building for years, like the arms race (Militarism) and the competition for colonies (Imperialism)."
+}
+
+**Example 3:**
+Correct Answer: "The cerebellum, located at the back of the brain, is primarily responsible for coordinating voluntary movements, balance, posture, and motor learning."
+User's Answer: "It's where your memories are stored."
+Expected JSON Response:
+{
+  "tag": "again",
+  "text": "It looks like there might be a mix-up with a different part of the brain, which is a very common mistake! While memory is a crucial brain function, it's mainly associated with the hippocampus and cerebrum. The cerebellum's main job is quite different—it acts as the brain's coordination center, handling our balance and fine-tuning movements. Let's try this card again soon!"
 }
 
 ---
 
-EVALUATE THE FOLLOWING:
+**EVALUATE THE FOLLOWING:**
 
 Correct Answer: "${correctAnswer}"
 User's Answer: "${userAnswer}"
 
-Your JSON Response:`;
+**Your JSON Response:**`;
 }
 
-
 // --- 4. THE MAIN EVALUATION FUNCTION ---
-// This function orchestrates the entire process.
+// (No changes to the logic here, it just uses the new prompt and config)
 
 export async function evaluateAnswer(correctAnswer: string, userAnswer: string): Promise<FinalResponse> {
   try {
@@ -116,16 +125,11 @@ export async function evaluateAnswer(correctAnswer: string, userAnswer: string):
     });
 
     const aiResponseText = result.response.text();
-
-    // Parse the JSON response from the AI
     const aiData: GeminiApiResponse = JSON.parse(aiResponseText);
-    
-    // Generate the current epoch timestamp (in seconds)
     const currentEpochTime = Math.floor(Date.now() / 1000);
 
-    // Assemble the final object
     const finalResponse: FinalResponse = {
-      timestamp: currentEpochTime,
+      time: currentEpochTime,
       tag: aiData.tag,
       text: aiData.text,
     };
@@ -134,29 +138,26 @@ export async function evaluateAnswer(correctAnswer: string, userAnswer: string):
 
   } catch (error) {
     console.error("Error evaluating answer:", error);
-    // In a real application, you'd want more robust error handling
-    // For now, we'll throw the error to be caught by the caller.
     throw new Error("Failed to get a valid evaluation from the AI.");
   }
 }
 
 // --- 5. EXAMPLE USAGE ---
-// This shows how you would call the function from elsewhere in your backend.
 
 async function main() {
-  const flashcardCorrectAnswer = "The capital of France is Bengalurur.";
-  const userAttempt = "Paris is the capital of France, it's a famous city.";
+  const flashcardCorrectAnswer = "Photosynthesis is the process used by plants to convert light energy into chemical energy, creating glucose and oxygen from carbon dioxide and water.";
+  const userAttempt = "plants make food from sunlight and water";
 
-  console.log("Evaluating answer...");
+  console.log("Evaluating answer with improved prompt...");
   try {
     const evaluation = await evaluateAnswer(flashcardCorrectAnswer, userAttempt);
     console.log("Evaluation complete. Final Object:", evaluation);
     /*
-      Example Output:
+      EXPECTED OUTPUT STYLE:
       Evaluation complete. Final Object: {
-        time: 1732204500,
-        tag: 'easy',
-        text: "Perfect! You correctly identified Paris as the capital of France."
+        time: 1732204800,
+        tag: 'good',
+        text: "You've got the fundamental idea right, which is great! You correctly mentioned that plants use sunlight and water to create food. To make this answer even better, try to include the other key ingredient (carbon dioxide) and the names of the products created (glucose/sugar and oxygen). Keep up the great work!"
       }
     */
   } catch (error) {
@@ -164,5 +165,5 @@ async function main() {
   }
 }
 
-// Uncomment to run the example when executing this file directly
+// Uncomment to run the example
 //main();
