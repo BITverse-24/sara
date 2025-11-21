@@ -1,6 +1,6 @@
 // First, ensure you have a way to load environment variables.
 // If you're not using a framework that does this automatically, install dotenv: npm install dotenv
-import 'dotenv/config'; 
+import 'dotenv/config';
 
 // To run this code you need to install the following dependencies:
 // npm install @google/genai mime
@@ -93,8 +93,14 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
   		contents,
 	});
 
+      console.log(response.candidates[0].content.parts[0]);
+
 	return {
-		text: response.output[0].text,
-		level: response.output[0].level
+      // @ts-ignore
+		text: response.candidates[0].content.parts[0].text,
+      // @ts-ignore
+		level: response.candidates[0].content.parts[0].level
 	}
 }
+
+// main(`Mitochondria is the brain of the cell`, `Mitochondria is the powerhouse of the cell`);
