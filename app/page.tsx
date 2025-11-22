@@ -1,31 +1,42 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { DeckTable } from "@/components/decks/DeckTable";
 import { Deck } from "@/types";
 
-const sampleDecks: Deck[] = [
-  {
-    id: "1",
-    name: "Spanish Basics",
-    newCount: 25,
-    learnCount: 40,
-   
-  },
-  {
-    id: "2",
-    name: "Biology — Cells",
-    newCount: 10,
-    learnCount: 18,
-   
-  },
-  {
-    id: "3",
-    name: "Interview Prep",
-    newCount: 8,
-    learnCount: 11,
-    
-  },
-];
-
 export default function Home() {
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDecks = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/getAllDeckData', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setDecks(data);
+      } catch (err) {
+        console.error('Failed to fetch decks:', err);
+        setError('Failed to load decks. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDecks();
+  }, []);
+
   return (
     <div className="space-y-6">
       <header>
@@ -38,7 +49,14 @@ export default function Home() {
           you study.
         </p>
       </header>
-      <DeckTable decks={sampleDecks} />
+      
+      {isLoading ? (
+        <div>Loading decks...</div>
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : (
+        <DeckTable decks={decks} />
+      )}
     </div>
   );
 }

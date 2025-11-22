@@ -8,53 +8,87 @@ import { startMicStreaming } from '@/lib/speechStreaming';
 import { AIChatbot } from '@/components/chat/AIChatbot';
 import { MarkdownDisplay } from '@/components/ui/MarkdownDisplay';
 
-interface Flashcard {
+interface QuestionAttempt {
   id: string;
-  question: string;
+  timestamp: string;
+  isCorrect: boolean;
+  userResponse: string;
+}
+
+interface Chat {
+  id: string;
+  messages: Array<{
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: string;
+  }>;
+}
+
+interface Question {
+  id: string;
+  text: string;
+  image: string | null;
   answer: string;
+  level: 'easy' | 'new' | 'good' | 'hard' | 'again';
+  attempts: QuestionAttempt[];
+  chat: Chat;
 }
 
-interface StudyDeck {
-  id: string;
-  name: string;
-  cards: Flashcard[];
+interface ApiResponse {
+  data: Question[];
 }
-
-const studyDecks: Record<string, StudyDeck> = {
-  '1': {
-    id: '1',
-    name: 'Spanish Basics',
-    cards: [
-      { id: 'c1', question: 'Translate "Good morning"', answer: 'Buenos días' },
-      { id: 'c2', question: 'Conjugate "ser" for él/ella', answer: 'Es' },
-      { id: 'c3', question: 'Plural of "libro"?', answer: 'Libros' },
-    ],
-  },
-  '2': {
-    id: '2',
-    name: 'Biology — Cells',
-    cards: [
-      { id: 'c1', question: 'Organelle that produces ATP?', answer: 'Mitochondria' },
-      { id: 'c2', question: 'Lipid bilayer name?', answer: 'Plasma membrane' },
-    ],
-  },
-  '3': {
-    id: '3',
-    name: 'Interview Prep',
-    cards: [
-      { id: 'c1', question: 'Explain Big O of binary search.', answer: 'O(log n)' },
-      { id: 'c2', question: 'What is dependency injection?', answer: 'Supplying dependencies externally.' },
-    ],
-  },
-};
 
 
 export default function StudySessionPage() {
   const params = useParams<{ deckId: string }>();
-  const deck = params?.deckId ? studyDecks[params.deckId] : undefined;
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!deck) {
-    return notFound();
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/getReviewQueue', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ deckId: params.deckId }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+        setQuestions(data.data);
+      } catch (err) {
+        console.error('Failed to fetch questions:', err);
+        setError('Failed to load questions. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (params.deckId) {
+      fetchQuestions();
+    }
+  }, [params.deckId]);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64">Loading...</div>;
+  }
+
+  if (error || !questions.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center p-4">
+        <p className="text-red-500 mb-4">{error || 'No questions available for this deck.'}</p>
+        <Link href="/" className="text-blue-400 hover:underline">
+          ← Back to Decks
+        </Link>
+      </div>
+    );
   }
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,11 +98,11 @@ export default function StudySessionPage() {
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const stopStreamingRef = useRef<(() => void) | null>(null);
 
-  const currentCard = deck.cards[currentIndex];
+  const currentQuestion = questions[currentIndex];
 
   const progressText = useMemo(() => {
-    return `${currentIndex + 1} / ${deck.cards.length}`;
-  }, [currentIndex, deck.cards.length]);
+    return `${currentIndex + 1} / ${questions.length}`;
+  }, [currentIndex, questions.length]);
 
   // Cleanup function
   useEffect(() => {
@@ -136,7 +170,7 @@ export default function StudySessionPage() {
       stopStreamingRef.current = null;
       setIsListening(false);
     }
-    const nextIndex = (currentIndex + 1) % deck.cards.length;
+    const nextIndex = (currentIndex + 1) % questions.length;
     setCurrentIndex(nextIndex);
     setUserAnswer('');
   };
@@ -151,7 +185,7 @@ export default function StudySessionPage() {
           >
             ← Back to Decks
           </Link>
-          <h1 className="text-3xl font-semibold">{deck.name}</h1>
+          <h1 className="text-3xl font-semibold">Study Session</h1>
           <p className="text-sm text-gray-500">Studying {progressText}</p>
         </div>
       </header>
@@ -165,7 +199,7 @@ export default function StudySessionPage() {
                 Question
               </p>
               <button
-                onClick={() => handleTextToSpeech(currentCard.question)}
+                onClick={() => handleTextToSpeech(currentQuestion.text)}
                 disabled={isSpeaking}
                 className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-full text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Text to Speech"
@@ -174,7 +208,7 @@ export default function StudySessionPage() {
               </button>
             </div>
             <div className="mt-4 text-2xl font-semibold">
-              <MarkdownDisplay content={currentCard.question} />
+              <MarkdownDisplay content={currentQuestion.text} />
             </div>
 
             <div className="mt-8 space-y-4">
@@ -216,8 +250,8 @@ export default function StudySessionPage() {
         {/* AI Chatbot Section - Takes 1 column */}
         <div className="lg:col-span-1 w-full">
           <AIChatbot
-            currentQuestion={currentCard.question}
-            currentAnswer={currentCard.answer}
+            currentQuestion={currentQuestion.text}
+            currentAnswer={currentQuestion.answer}
             userAnswer={userAnswer}
           />
         </div>
