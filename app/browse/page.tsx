@@ -1,19 +1,43 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Deck } from '@/types';
 
-const initialDecks: Deck[] = [
-  { id: '1', name: 'Spanish Basics', newCount: 25, learnCount: 40, dueCount: 12 },
-  { id: '2', name: 'Biology — Cells', newCount: 10, learnCount: 18, dueCount: 6 },
-  { id: '3', name: 'Interview Prep', newCount: 8, learnCount: 11, dueCount: 4 },
-];
-
 export default function BrowseDecksPage() {
-  const [decks, setDecks] = useState(initialDecks);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+
+  useEffect(() => {
+    const fetchDecks = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/getAllDeckData', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setDecks(data);
+      } catch (err) {
+        console.error('Failed to fetch decks:', err);
+        setError('Failed to load decks. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDecks();
+  }, []);
 
   const startRename = (deckId: string, currentName: string) => {
     setEditingDeckId(deckId);
@@ -49,12 +73,17 @@ export default function BrowseDecksPage() {
         </p>
       </header>
 
-      <div className="space-y-4">
-        {decks.map((deck) => (
-          <div
-            key={deck.id}
-            className="rounded-2xl border border-gray-800 bg-gray-900 p-4 transition hover:border-gray-700"
-          >
+      {isLoading ? (
+        <div>Loading decks...</div>
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : (
+        <div className="space-y-4">
+          {decks.map((deck) => (
+            <div
+              key={deck.id}
+              className="rounded-2xl border border-gray-800 bg-gray-900 p-4 transition hover:border-gray-700"
+            >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-1 flex-col gap-2">
                 {editingDeckId === deck.id ? (
@@ -99,19 +128,19 @@ export default function BrowseDecksPage() {
                 <div className="mt-1 flex gap-4 text-sm text-gray-400">
                   <span>New: {deck.newCount}</span>
                   <span>Learn: {deck.learnCount}</span>
-                  <span>Due: {deck.dueCount}</span>
                 </div>
               </div>
             </div>
           </div>
-        ))}
+          ))}
 
-        {decks.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
-            All decks removed. Add new decks to bring content back here.
-          </div>
-        )}
-      </div>
+          {decks.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+              All decks removed. Add new decks to bring content back here.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
