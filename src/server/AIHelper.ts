@@ -47,14 +47,14 @@ export const submitAnswer = async (deckId: string, flashcard: questionType, user
     let questionsUpdate;
 
     for (let deck of decks) {
-        if (deck['id'] == deckId) {
+        if (deck.id == deckId) {
             for (let question of deck.questions) {
-                if (question['id'] == flashcard.id) {
+                if (question.id == flashcard.id) {
                     question.lastInterval = newItemState.lastIntervalDays * 86400;
                     question.stability = newItemState.stability;
                     question.level = numberGradeToWord(newItemState.difficulty);
                     question.lapses = newItemState.lapses;
-                    questionsUpdate = deck['id']['questions'];
+                    questionsUpdate = deck.questions;
                 }
             }
         }

@@ -23,11 +23,11 @@ export const addNewAttemptToFlashcard = async (deckId: string, attemptData: ques
     await loadDecks();
     let decks = getDecks();
     for (let deck of decks) {
-        if (deck['id'] == deckId) {
-            let questions: [questionType] = deck['questions'];
+        if (deck.id == deckId) {
+            let questions: [questionType] = deck.questions;
             for (let question of questions) {
-                if (question['id'] == flashcardId) {
-                    question['attempts'].push(attemptData);
+                if (question.id == flashcardId) {
+                    question.attempts.push(attemptData);
                     updateQuestionsInDeck(deckId, questions)
                 }
             }
@@ -60,8 +60,8 @@ export const getFlashcardReviewQueue = async (deckId: string) => {
     let newQuestions: number = 0;
     let learning: number = 0;
     for (let deck of decks) {
-        if (deck['id'] == deckId) {
-            questions = deck['questions'];
+        if (deck.id == deckId) {
+            questions = deck.questions;
         }
     }
 
