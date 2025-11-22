@@ -44,7 +44,7 @@ export const addNewFlashcard = async (deckId: string, question: string, answer: 
         level: 'new',
         stability: 1,
         lapses: 0,
-        lastInterval: 1 * 24 * 60 * 60 * 1000,
+        lastInterval: 0 * 24 * 60 * 60 * 1000,
         attempts: [],
         chat: []
     }

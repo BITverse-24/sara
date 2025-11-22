@@ -2,7 +2,6 @@ import express from 'express';
 import { Request, Response } from 'express';
 import cors from 'cors';
 import { addMessageToChatInFlashcard,
-         addNewAttemptToFlashcard,
          addNewFlashcard,
          getFlashcardReviewQueue,
        } from './flashcards';
@@ -32,16 +31,10 @@ const io = new socketIO.Server(webSocketServer, {
 });
 
 expressServer.use(cors({
-    // origin: ["http://localhost:3000", "https://pineapp1es.github.io"],
-    // origin: 'https://pineapp1es.github.io/ChatApp/',
     origin: '*'
 }));
 expressServer.use(express.json());
 
-
-// expressServer.post('/flashcard/addMessageToChatInFlashcard', (req: Request, res: Response) => {
-//     addMessageToChatInFlashcard(req.deckId: string, req.message: messageType, req.flashcardId: string);
-// })
 
 expressServer.post('/getReviewQueue', async (req: Request, res: Response) => {
 
@@ -117,7 +110,7 @@ io.on('connection', (socket) => {
 
 
 
-const websocketPort = 7845
-const expressPort = 7846
+const websocketPort = 5001
+const expressPort = 5000
 expressServer.listen(expressPort, () => console.log(`Express server listening to http://localhost:${expressPort}`))
 webSocketServer.listen(websocketPort, () => console.log(`WebSocket listening to http://localhost:${websocketPort}`));
