@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor';
 
@@ -11,23 +11,54 @@ interface FormState {
   imageUrl: string;
 }
 
-const initialDecks = [
-  { id: '1', name: 'Spanish Basics' },
-  { id: '2', name: 'Biology — Cells' },
-  { id: '3', name: 'Interview Prep' },
-];
-
 export default function AddCardPage() {
-  const [availableDecks, setAvailableDecks] = useState(initialDecks);
+  const [availableDecks, setAvailableDecks] = useState<{id: string, name: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'card' | 'deck'>('card');
   const [newDeckName, setNewDeckName] = useState('');
   const [formState, setFormState] = useState<FormState>({
-    deckId: initialDecks[0]?.id ?? '',
+    deckId: '',
     question: '',
     answer: '',
     imageUrl: '',
   });
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  useEffect(() => {
+    const fetchDecks = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/getAllDeckData', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setAvailableDecks(data);
+        // Set the first deck as selected if available
+        if (data.length > 0) {
+          setFormState(prev => ({
+            ...prev,
+            deckId: data[0].id
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch decks:', err);
+        setError('Failed to load decks. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDecks();
+  }, []);
 
   const isValid = useMemo(() => {
     if (mode === 'deck') {
@@ -135,7 +166,11 @@ export default function AddCardPage() {
         )}
       </header>
 
-      {mode === 'deck' ? (
+      {isLoading ? (
+        <div>Loading decks...</div>
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : mode === 'deck' ? (
         <form onSubmit={handleDeckSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-300" htmlFor="deckName">
@@ -167,6 +202,10 @@ export default function AddCardPage() {
             )}
           </div>
         </form>
+      ) : availableDecks.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-gray-800 p-10 text-center text-gray-500">
+          No decks available. Please create a deck first.
+        </div>
       ) : (
         <form onSubmit={handleCardSubmit} className="space-y-6">
         <div className="space-y-2">
