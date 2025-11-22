@@ -1,4 +1,3 @@
-// import { ipcMain } from 'electron';
 import { generateId } from '../utils/general.ts';
 import { deckType, messageType, questionType, questionAttemptType, updateQuestionsInDeck, addQuestionToDeck } from './database/decks.ts';
 import { loadDecks, getDecks } from './loadDecks.ts';
@@ -70,9 +69,13 @@ export const getFlashcardReviewQueue = async (deckId: string) => {
     const epochNow: number = Date.now();
 
     for (let question of questions) {
-        const questionAttempts: Array<questionAttemptType> = question['attempts']
+        const questionAttempts: Array<questionAttemptType> = question.attempts;
+        if (questionAttempts.length == 0) {
+            newQuestions++;
+            continue;
+        }
         const due = questionAttempts[questionAttempts.length - 1].timestamp + question.lastInterval - epochNow
-        if (due > 0)
+        if (due < 0)
             reviewQueue.push({ question: question, due: due });
     }
 
@@ -80,23 +83,6 @@ export const getFlashcardReviewQueue = async (deckId: string) => {
         return a.due - b.due;
     });
 
+    learning = reviewQueue.length;
     return [reviewQueue, newQuestions, learning] as const;
 }
-
-
-// export function registerIpcFunctions() {
-//     ipcMain.handle('flashcard:addMessageToChatInFlashcard ',
-//         (event, deckId: string, message: messageType, flashcardId: string) =>
-//             addMessageToChatInFlashcard(deckId, message, flashcardId));
-
-//     ipcMain.handle('flashcard:addNewAttemptToFlashcard',
-//         (event, deckId: string, attemptData: questionAttemptType, flashcardId: string) =>
-//             addNewAttemptToFlashcard(deckId, attemptData, flashcardId));
-
-//     ipcMain.handle('flashcard:getFlashCardReview',
-//         (event, deckId: string) => getFlashcardReviewQueue(deckId));
-
-//     ipcMain.handle('flashcard:addNewFlashcard',
-//         (event, deckId: string, question: string, answer: string, image: string | null) =>
-//             addNewFlashcard(deckId, question, answer, image))
-// }

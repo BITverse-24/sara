@@ -97,9 +97,10 @@ Third, write a DETAILED and CONSTRUCTIVE message in natural language. This messa
 
 	return {
       // @ts-ignore
-		text: response.candidates[0].content.parts[0].text,
+		text: response.candidates[0].content.parts[0].text || "",
       // @ts-ignore
-		level: response.candidates[0].content.parts[0].level
+		tag: response.candidates[0].content.parts[0].level,
+        timestamp: Date.now()
 	}
 }
 
