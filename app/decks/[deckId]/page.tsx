@@ -2,67 +2,120 @@
 
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { MarkdownDisplay } from '@/components/ui/MarkdownDisplay';
 
-interface Flashcard {
+interface QuestionAttempt {
   id: string;
-  question: string;
+  timestamp: number;
+  wasCorrect: boolean;
+  responseTime: number;
+}
+
+interface Chat {
+  id: string;
+  messages: Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+  }>;
+}
+
+interface Question {
+  id: string;
+  text: string;
+  image: string | null;
   answer: string;
-  imageUrl?: string;
+  level: 'easy' | 'new' | 'good' | 'hard' | 'again';
+  attempts: QuestionAttempt[];
+  chat: Chat;
   createdAt: number;
 }
 
-interface MockDeck {
+interface Deck {
   id: string;
   name: string;
+  questions: Question[];
   createdAt: number;
-  cards: Flashcard[];
 }
-
-const mockDecks: Record<string, MockDeck> = {
-  '1': {
-    id: '1',
-    name: 'Spanish Basics',
-    createdAt: 1_703_745_612,
-    cards: [
-      {
-        id: 'c1',
-        question: 'Translate: "Good morning"',
-        answer: 'Buenos días',
-        createdAt: 1_703_745_612,
-      },
-      {
-        id: 'c2',
-        question: 'Conjugate "ser" for él/ella',
-        answer: 'Es',
-        createdAt: 1_703_745_700,
-      },
-      {
-        id: 'c3',
-        question: 'What is the plural of "libro"?',
-        answer: 'Libros',
-        createdAt: 1_703_745_750,
-      },
-    ],
-  },
-};
 
 export default function DeckDetailPage() {
   const params = useParams<{ deckId: string }>();
-  const deck = params?.deckId ? mockDecks[params.deckId] : undefined;
+  const [deck, setDeck] = useState<Deck | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDeck = async () => {
+      if (!params?.deckId) return;
+      
+      try {
+        const response = await fetch(`http://localhost:5000/getDeck/${params.deckId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            return notFound();
+          }
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setDeck(data);
+      } catch (err) {
+        console.error('Failed to fetch deck:', err);
+        setError('Failed to load deck. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDeck();
+  }, [params?.deckId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div>Loading deck...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   if (!deck) {
     return notFound();
   }
 
-  const [cards, setCards] = useState(deck.cards);
+  // Map questions to the expected card format for the UI
+  const cards = useMemo(() => {
+    return deck.questions.map(question => ({
+      id: question.id,
+      question: question.text,
+      answer: question.answer,
+      imageUrl: question.image || undefined,
+      createdAt: question.createdAt
+    }));
+  }, [deck.questions]);
+
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [menuCardId, setMenuCardId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, Pick<Flashcard, 'question' | 'answer'>>>(
+  const [localCards, setLocalCards] = useState(cards);
+  const [drafts, setDrafts] = useState<Record<string, { question: string; answer: string }>>(
     () =>
-      deck.cards.reduce(
+      cards.reduce(
         (acc, card) => ({
           ...acc,
           [card.id]: { question: card.question, answer: card.answer },
@@ -93,7 +146,7 @@ export default function DeckDetailPage() {
     const draft = drafts[cardId];
     if (!draft) return;
 
-    setCards((prev) =>
+    setLocalCards((prev: typeof cards) =>
       prev.map((card) =>
         card.id === cardId
           ? { ...card, question: draft.question.trim(), answer: draft.answer.trim() }
@@ -108,7 +161,7 @@ export default function DeckDetailPage() {
   };
 
   const handleDeleteCard = (cardId: string) => {
-    setCards((prev) => prev.filter((card) => card.id !== cardId));
+    setLocalCards((prev: typeof cards) => prev.filter((card) => card.id !== cardId));
     setEditingCardId((prev) => (prev === cardId ? null : prev));
     setMenuCardId(null);
   };
@@ -128,11 +181,11 @@ export default function DeckDetailPage() {
         </Link>
         <p className="text-sm uppercase tracking-wide text-gray-400">Deck</p>
         <h1 className="text-3xl font-semibold">{deck.name}</h1>
-        <p className="text-sm text-gray-500">{cards.length} cards</p>
+        <p className="text-sm text-gray-500">{deck.questions.length} cards</p>
       </header>
 
       <section className="space-y-4">
-        {cards.map((card) => {
+        {localCards.map((card) => {
           const isCurrent = editingCardId === card.id;
           const draft = drafts[card.id];
 
