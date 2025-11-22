@@ -7,10 +7,14 @@ import { addMessageToChatInFlashcard,
          getFlashcardReviewQueue,
        } from './flashcards';
 
+import * as socketIO from 'socket.io';
+import { createServer } from 'node:http';
 import { submitAnswer } from './AIHelper';
 import {
-    questionType
+    questionType,
+    messageType
 } from './database/decks.ts';
+import { generateChat } from './gemini/aiChat.ts'
 
 import { createDeck, getAllDecksData } from './database/decks.ts'
 import { generateId } from '../utils/general.ts'
@@ -19,6 +23,13 @@ import { generateId } from '../utils/general.ts'
 // creating express server
 const expressServer = express()
 
+const webSocketServer = createServer(expressServer)
+const io = new socketIO.Server(webSocketServer, {
+    cookie: true,
+    cors: {
+        origin: '*',
+    }
+});
 
 expressServer.use(cors({
     // origin: ["http://localhost:3000", "https://pineapp1es.github.io"],
@@ -80,10 +91,32 @@ expressServer.post('/submitFlashcard', async (req: Request, res: Response) => {
     await submitAnswer(deckId, flashcard, userAns)
 }) 
 
-expressServer.post('/')
+expressServer.post('/messageAi', async (req: Request, res: Response) => {
+    const message: messageType =  req.body.message;
+    const deckId: string = req.body.deckId;
+    const flashcard: questionType = req.body.flashcard;
+    if (!message || !deckId || !flashcard) res.json( { success: false, aiReply: null } );
 
-expressServer.post('/flashcard/addNewAttemptToFlashcard')
+    await addMessageToChatInFlashcard(deckId, message, flashcard.id);
+    const aiReply: string  = generateChat(message.text, flashcard.text, flashcard.answer);
+    const aiMessage: messageType = {
+        text: aiReply,
+        timestamp: Date.now(),
+        author: 'ai',
+    }
+    await addMessageToChatInFlashcard(deckId, aiMessage, flashcard.id);
+    res.json( { success: true, aiReply: aiMessage } );
+})
+
+io.on('connection', (socket) => {
+    socket.on('listenVoice', (data) => {
+
+    }) 
+});
 
 
+
+const websocketPort = 7845
 const expressPort = 7846
-expressServer.listen(expressPort, () => logger.info(`Express server listening to http://localhost:${expressPort}`))
+expressServer.listen(expressPort, () => console.log(`Express server listening to http://localhost:${expressPort}`))
+webSocketServer.listen(websocketPort, () => console.log(`WebSocket listening to http://localhost:${websocketPort}`));
