@@ -9,7 +9,7 @@ import {
     Type,
 } from '@google/genai';
 
-export default async function generateChat(query: string, question: string, answer: string) {
+export async function generateChat(query: string, question: string, answer: string) {
     const ai = new GoogleGenAI({
         apiKey: process.env.GEMINI_API_KEY,
     });

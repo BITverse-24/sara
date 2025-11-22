@@ -88,7 +88,8 @@ expressServer.post('/submitFlashcard', async (req: Request, res: Response) => {
     if (!flashcard) res.json({ success: false });
     const userAns: string = req.body.answer;
 
-    await submitAnswer(deckId, flashcard, userAns)
+    const aiMessage = await submitAnswer(deckId, flashcard, userAns)
+    res.json({ success: true, aiReply: aiMessage });
 }) 
 
 expressServer.post('/messageAi', async (req: Request, res: Response) => {
@@ -98,9 +99,9 @@ expressServer.post('/messageAi', async (req: Request, res: Response) => {
     if (!message || !deckId || !flashcard) res.json( { success: false, aiReply: null } );
 
     await addMessageToChatInFlashcard(deckId, message, flashcard.id);
-    const aiReply: string  = generateChat(message.text, flashcard.text, flashcard.answer);
+    const { text }  = await generateChat(message.text, flashcard.text, flashcard.answer);
     const aiMessage: messageType = {
-        text: aiReply,
+        text: text || "",
         timestamp: Date.now(),
         author: 'ai',
     }

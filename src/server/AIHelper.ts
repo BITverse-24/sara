@@ -68,4 +68,6 @@ export const submitAnswer = async (deckId: string, flashcard: questionType, user
     }
     addNewAttemptToFlashcard(deckId, attempt, flashcard.id);
     updateQuestionsInDeck(deckId, questionsUpdate)
+
+    return aiMessage;
 }
